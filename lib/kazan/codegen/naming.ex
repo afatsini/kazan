@@ -63,33 +63,29 @@ defmodule Kazan.Codegen.Naming do
   @spec module_name_components(String.t()) ::
           nonempty_improper_list(atom, String.t())
   defp module_name_components(name) do
-    to_components = fn str ->
-      str |> String.split(".") |> Enum.map(&titlecase_once/1)
-    end
-
     case name do
       # Deprecated
       "io.k8s.kubernetes.pkg.api." <> rest ->
-        [Kazan.Apis] ++ to_components.(rest)
+        [Kazan.Apis] ++ to_components(rest)
 
       # Deprecated
       "io.k8s.kubernetes.pkg.apis." <> rest ->
-        [Kazan.Apis] ++ to_components.(rest)
+        [Kazan.Apis] ++ to_components(rest)
 
       "io.k8s.api." <> rest ->
-        [Kazan.Apis] ++ to_components.(rest)
+        [Kazan.Apis] ++ to_components(rest)
 
       "io.k8s.apimachinery.pkg.apis." <> rest ->
-        [Kazan.Models.Apimachinery] ++ to_components.(rest)
+        [Kazan.Models.Apimachinery] ++ to_components(rest)
 
       "io.k8s.apimachinery.pkg." <> rest ->
-        [Kazan.Models.Apimachinery] ++ to_components.(rest)
+        [Kazan.Models.Apimachinery] ++ to_components(rest)
 
       "io.k8s.kube-aggregator.pkg.apis." <> rest ->
-        [Kazan.Models.KubeAggregator] ++ to_components.(rest)
+        [Kazan.Models.KubeAggregator] ++ to_components(rest)
 
       "io.k8s.apiextensions-apiserver.pkg.apis.apiextensions." <> rest ->
-        [Kazan.Apis.Apiextensions] ++ to_components.(rest)
+        [Kazan.Apis.Apiextensions] ++ to_components(rest)
 
       other ->
         Config.oai_name_mappings()
@@ -102,7 +98,7 @@ defmodule Kazan.Codegen.Naming do
 
           {oai_prefix, module_prefix} ->
             [module_prefix] ++
-              to_components.(String.replace_leading(other, oai_prefix, ""))
+              to_components(String.replace_leading(other, oai_prefix, ""))
         end
     end
   end
@@ -113,5 +109,9 @@ defmodule Kazan.Codegen.Naming do
   defp titlecase_once(str) do
     first_letter = String.first(str)
     String.replace_prefix(str, first_letter, String.upcase(first_letter))
+  end
+
+  defp to_components(str) do
+    str |> String.split(".") |> Enum.map(&titlecase_once/1)
   end
 end

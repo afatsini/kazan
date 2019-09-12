@@ -48,6 +48,8 @@ defmodule Kazan.Mixfile do
       {:poison, "~> 2.0 or ~> 3.0 or ~> 4.0"},
       {:httpoison, "~> 0.10 or ~> 1.0"},
       {:yaml_elixir, "~> 2.0"},
+      {:protobuf, "~> 0.6.3"},
+      {:google_protos, "~> 0.1"},
 
       # Dev dependencies
       {:ex_doc, "~> 0.14", only: :dev},
