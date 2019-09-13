@@ -55,6 +55,53 @@ defmodule Kazan.Codegen.Naming do
     end
   end
 
+  def k8s_name_to_module_name(k8s_name) do
+    ["Elixir", "K8s", "Io" | namespace_pieces] = k8s_name
+    |> Atom.to_string
+    |> String.split(".")
+
+   case namespace_pieces do
+      # Deprecated
+      ["Pkg", "Api" | rest] ->
+        [Kazan.Apis] ++ rest
+
+      # Deprecated
+      ["Pkg", "Apis" | rest] ->
+        [Kazan.Apis] ++ rest
+
+      ["Api" | rest] ->
+        [Kazan.Apis] ++ rest
+
+      ["Apimachinery", "Pkg", "Apis" | rest] ->
+        [Kazan.Models.Apimachinery] ++ rest
+
+      ["Apimachinery", "Pkg" | rest] ->
+        [Kazan.Models.Apimachinery] ++ rest
+
+      ["KubeAggregator", "Pkg", "Apis" | rest] ->
+        [Kazan.Models.KubeAggregator] ++ rest
+
+      ["ApiextensionsApiserver", "Pkg", "Apis", "Apiextensions" | rest] ->
+        [Kazan.Apis.Apiextensions] ++ rest
+
+      other ->
+        other_string = Enum.join(other, ".")
+        Config.oai_name_mappings()
+        |> Enum.find(fn {oai_prefix, _} ->
+          String.starts_with?(other_string, oai_prefix)
+        end)
+        |> case do
+          nil ->
+            raise Kazan.UnknownName, name: other
+
+          {oai_prefix, module_prefix} ->
+            [module_prefix] ++
+              to_components(String.replace_leading(other, oai_prefix, ""))
+        end
+    end
+    |> Module.concat()
+  end
+
   # The Kube OAI specs have some extremely long namespace prefixes on them.
   # These really long names make for a pretty ugly API in Elixir, so we chop off
   # some common prefixes.
