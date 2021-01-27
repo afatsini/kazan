@@ -253,7 +253,7 @@ defmodule Kazan.Watcher do
 
   @impl GenServer
   def handle_info(:start_request, state) do
-    {:noreply, start_request(state)}
+    {:noreply, start_request(state), :hibernate}
   end
 
   @impl GenServer
@@ -285,17 +285,17 @@ defmodule Kazan.Watcher do
 
     # Simulate ASyncEnd also being sent with old request ID a few 100ms after
     Process.send_after(self(), %HTTPoison.AsyncEnd{id: request_id}, 1000)
-    {:noreply, state}
+    {:noreply, state, :hibernate}
   end
 
   @impl GenServer
   def handle_info(%HTTPoison.AsyncStatus{code: 200}, state) do
-    {:noreply, state}
+    {:noreply, state, :hibernate}
   end
 
   @impl GenServer
   def handle_info(%HTTPoison.AsyncHeaders{}, state) do
-    {:noreply, state}
+    {:noreply, state, :hibernate}
   end
 
   @impl GenServer
@@ -316,7 +316,7 @@ defmodule Kazan.Watcher do
 
     case process_lines(state, lines) do
       {:ok, new_rv} ->
-        {:noreply, %State{state | buffer: buffer, rv: new_rv}}
+        {:noreply, %State{state | buffer: buffer, rv: new_rv}, :hibernate}
 
       {:error, :gone} ->
         if manage_gone? do
@@ -325,7 +325,7 @@ defmodule Kazan.Watcher do
             |> refetch_resource()
             |> start_request()
 
-          {:noreply, state}
+          {:noreply, state, :hibernate}
         else
           send(send_to, %Event{type: :gone, from: self(), ref: ref})
           {:stop, :normal, state}
@@ -339,7 +339,7 @@ defmodule Kazan.Watcher do
         %State{id: request_id, name: name, rv: rv} = state
       ) do
     log(state, "Received Timeout: #{name} rv: #{rv}")
-    {:noreply, start_request(state)}
+    {:noreply, start_request(state), :hibernate}
   end
 
   @impl GenServer
@@ -348,7 +348,7 @@ defmodule Kazan.Watcher do
         %State{id: request_id, name: name, rv: rv} = state
       ) do
     log(state, "Received AsyncEnd: #{name} rv: #{rv}")
-    {:noreply, start_request(state)}
+    {:noreply, start_request(state), :hibernate}
   end
 
   @impl GenServer
@@ -361,7 +361,7 @@ defmodule Kazan.Watcher do
       "Received AsyncEnd #{name} from old request id: #{inspect(request_id)} - ignoring"
     )
 
-    {:noreply, state}
+    {:noreply, state, :hibernate}
   end
 
   @impl GenServer
